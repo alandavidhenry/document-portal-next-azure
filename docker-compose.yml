@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: minato-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: minato
+      POSTGRES_PASSWORD: minato
+      POSTGRES_DB: minato
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U minato -d minato']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    container_name: minato-azurite
+    restart: unless-stopped
+    # --skipApiVersionCheck: the @azure SDK versions this project pins send an
+    # x-ms-version newer than this Azurite image recognizes; without the flag
+    # every request 400s with "API version not supported".
+    command: azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0 --location /data --skipApiVersionCheck --silent
+    ports:
+      - '10000:10000'
+      - '10001:10001'
+      - '10002:10002'
+    volumes:
+      - azurite-data:/data
+
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    container_name: minato-gotenberg
+    restart: unless-stopped
+    ports:
+      - '3001:3000'
+
+volumes:
+  postgres-data:
+  azurite-data:

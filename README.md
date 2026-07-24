@@ -77,20 +77,19 @@ The Client Administrator is responsible for:
 ### Prerequisites
 
 - Node.js 22+
-- Azurite (Azure Storage emulator) — choose one:
-  - **VS Code extension** (recommended): install [Azurite](https://marketplace.visualstudio.com/items?itemName=Azurite.azurite) from the VS Code marketplace, then use the command palette (`Ctrl+Shift+P` → "Azurite: Start")
-  - **npx** (no install): `npx azurite --silent` (run from the project root)
-  - **Global npm**: `npm install -g azurite` then `azurite --silent`
-  - **Docker**: `docker run -p 10000:10000 -p 10001:10001 -p 10002:10002 mcr.microsoft.com/azure-storage/azurite`
+- Docker (for Postgres, Azurite and Gotenberg — see below)
 
-  Azurite writes `__azurite_db_*.json` state files to wherever it is started — these are gitignored if you run it from the project root.
+Postgres, Azurite (Azure Storage emulator) and Gotenberg (Word→PDF conversion) run locally via `docker-compose.yml`:
 
-  Set `AZURE_STORAGE_CONNECTION_STRING` to the Azurite default connection string:
-  ```
-  DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;
-  ```
+```bash
+npm run docker:up     # starts postgres, azurite and gotenberg, waits until healthy
+npm run docker:down   # stops them
+npm run docker:logs   # tails logs from all three
+```
 
-- Gotenberg (Word→PDF conversion, only needed when working on uploaded-document features): `docker run --rm -p 3001:3000 gotenberg/gotenberg:8`, then set `GOTENBERG_URL=http://localhost:3000`
+This replaces running Neon in the cloud for local dev — no external dependency needed, and it sidesteps Neon's free-tier compute-hour quota. Data persists in Docker volumes across restarts (`docker compose down -v` to wipe them).
+
+If you'd rather run these individually instead of via Docker Compose (e.g. the VS Code Azurite extension), see the connection details in `.env.example`.
 
 ### Setup
 
@@ -99,34 +98,43 @@ The Client Administrator is responsible for:
    npm install
    ```
 
-2. Create `.env.local`:
-   ```env
-   AZURE_STORAGE_CONNECTION_STRING=
-   AZURE_STORAGE_CONTAINER_NAME=documents
-   NEXTAUTH_SECRET=any-random-string-for-local-dev
-   NEXTAUTH_URL=http://localhost:3000
-   DEFAULT_ADMIN_EMAIL=your@email.com
-   AZURE_COMMUNICATION_CONNECTION_STRING=  # from Azure portal (ACS resource → Keys)
-   ACS_SENDER_ADDRESS=                     # e.g. DoNotReply@<uuid>.azurecomm.net
-   USE_AZURITE=true
-   DATABASE_URL=postgresql://...           # Neon connection string (or local PostgreSQL)
-   GOTENBERG_URL=http://localhost:3000     # only needed for uploaded-document (Word→PDF) features
-   ```
-
-3. Apply the database schema (run once, and again after schema changes):
+2. Create `.env.local` (copy `.env.example` — its defaults already match the Docker Compose stack):
    ```bash
-   npx prisma migrate dev
+   cp .env.example .env.local
+   ```
+   Then fill in `NEXTAUTH_SECRET`, `DEFAULT_ADMIN_EMAIL`, and (if testing email) `AZURE_COMMUNICATION_CONNECTION_STRING`/`ACS_SENDER_ADDRESS`.
+
+3. Start the backing services:
+   ```bash
+   npm run docker:up
    ```
 
-4. Seed the initial admin user:
+4. Apply the database schema (run once, and again after schema changes):
+   ```bash
+   npx prisma migrate deploy
+   ```
+
+5. Create the blob container (once per fresh Azurite volume — real Azure Storage containers are provisioned by Terraform instead):
+   ```bash
+   node scripts/create-storage-container.js
+   ```
+
+6. Seed the initial admin user:
    ```bash
    node scripts/seed-admin.js <password> "Display Name"
    ```
 
-5. Start Azurite (see Prerequisites above), then run the dev server:
+7. Seed sample companies/templates/assignments (optional, but you'll otherwise sign in to an empty app):
+   ```bash
+   npm run db:seed
+   ```
+
+8. Run the dev server:
    ```bash
    npm run dev
    ```
+
+> If you also run Azurite outside Docker (VS Code extension, global npm install, etc.), stop it first — it binds the same ports and will silently shadow the Docker container on `127.0.0.1`.
 
 ### Available Commands
 
@@ -139,6 +147,9 @@ npm run checks       # Lint + format check + TypeScript + tests (full quality ga
 npm test             # Run all tests
 npm run test:watch   # Run tests in watch mode
 npm run test:coverage # Run tests with coverage report
+npm run docker:up    # Start local Postgres, Azurite and Gotenberg
+npm run docker:down  # Stop them
+npm run docker:logs  # Tail their logs
 ```
 
 ## Testing
