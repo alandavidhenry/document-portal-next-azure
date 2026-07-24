@@ -14,7 +14,10 @@
     "test:coverage": "vitest run --coverage",
     "checks": "npm run lint && npm run format && npx tsc --noEmit && npm test",
     "prepare": "husky",
-    "db:seed": "npx prisma db seed"
+    "db:seed": "npx prisma db seed",
+    "docker:up": "docker compose up -d --wait",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
