@@ -67,6 +67,4 @@ __azurite_db_*.json
 github_pat.txt
 dev-credentials.txt
 .VSCodeCounter
-scripts/
 /src/generated/prisma
-/prisma/seed.ts

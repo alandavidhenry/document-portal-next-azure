@@ -119,15 +119,16 @@ If you'd rather run these individually instead of via Docker Compose (e.g. the V
    node scripts/create-storage-container.js
    ```
 
-6. Seed the initial admin user:
+6. Seed the initial admin user (uses `DEFAULT_ADMIN_EMAIL` from `.env.local`; safe to re-run — skips if that email already exists):
    ```bash
    node scripts/seed-admin.js <password> "Display Name"
    ```
 
-7. Seed sample companies/templates/assignments (optional, but you'll otherwise sign in to an empty app):
+7. Seed sample companies/templates/assignments (optional, but you'll otherwise sign in to an empty app). Not idempotent — re-running against a non-empty DB creates duplicates, so only run once per fresh volume:
    ```bash
    npm run db:seed
    ```
+   Creates 5 companies, 15 users (password `Password123!`), 20 document templates, and a mix of overdue/upcoming/completed assignments so the app looks in-use.
 
 8. Run the dev server:
    ```bash
