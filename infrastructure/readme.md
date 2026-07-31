@@ -17,6 +17,8 @@ infrastructure/
     ├── app_service/
     ├── document_intelligence/
     ├── communication_service/
+    ├── gotenberg/
+    ├── ai_foundry/            # Comprehension-question generation (infra only, no app code yet)
     ├── postgres_flexible_server/  # Scaffolded, not wired into minato/ — see below
     └── minato/  # Composition module — orchestrates all others
 ```

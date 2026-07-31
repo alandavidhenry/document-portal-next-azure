@@ -154,6 +154,23 @@ module "gotenberg" {
   depends_on = [time_sleep.kv_deployer_propagation]
 }
 
+module "ai_foundry" {
+  source = "../ai_foundry"
+
+  project                   = var.project
+  environment               = var.environment
+  location                  = var.location
+  resource_group_name       = module.resource_group.resource_group_name
+  key_vault_id              = module.key_vault.key_vault_id
+  model_name                = var.ai_foundry.model_name
+  model_version             = var.ai_foundry.model_version
+  model_deployment_sku_name = var.ai_foundry.model_deployment_sku_name
+  model_capacity            = var.ai_foundry.model_capacity
+  tags                      = local.common_tags
+
+  depends_on = [time_sleep.kv_deployer_propagation]
+}
+
 module "app_service" {
   source = "../app_service"
 
@@ -187,6 +204,9 @@ module "app_service" {
     "GOTENBERG_URL"                         = module.gotenberg.url
     "GOTENBERG_BASIC_AUTH_USERNAME"         = "@Microsoft.KeyVault(SecretUri=${module.gotenberg.basic_auth_username_secret_versionless_id})"
     "GOTENBERG_BASIC_AUTH_PASSWORD"         = "@Microsoft.KeyVault(SecretUri=${module.gotenberg.basic_auth_password_secret_versionless_id})"
+    "AI_FOUNDRY_ENDPOINT"                   = "@Microsoft.KeyVault(SecretUri=${module.ai_foundry.ai_foundry_endpoint_secret_versionless_id})"
+    "AI_FOUNDRY_KEY"                        = "@Microsoft.KeyVault(SecretUri=${module.ai_foundry.ai_foundry_key_secret_versionless_id})"
+    "AI_FOUNDRY_DEPLOYMENT_NAME"            = module.ai_foundry.deployment_name
   })
 }
 

@@ -10,6 +10,7 @@ module "minato" {
   key_vault            = var.key_vault
   storage              = var.storage
   storage_container    = var.storage_container
+  ai_foundry           = var.ai_foundry
   github_username      = var.github_username
   github_token         = var.github_token
   extra_app_settings   = var.extra_app_settings

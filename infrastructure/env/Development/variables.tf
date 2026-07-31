@@ -70,6 +70,16 @@ variable "document_intelligence" {
   }
 }
 
+variable "ai_foundry" {
+  description = "AI Foundry account + model deployment configuration (comprehension question generation)"
+  type = object({
+    model_name                = string
+    model_version             = string
+    model_deployment_sku_name = optional(string, "GlobalStandard")
+    model_capacity            = optional(number, 1)
+  })
+}
+
 variable "github_username" {
   description = "GitHub username for container registry"
   type        = string

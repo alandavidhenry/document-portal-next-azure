@@ -51,3 +51,13 @@ output "document_intelligence_key" {
   value       = module.minato.document_intelligence_key
   sensitive   = true
 }
+
+output "ai_foundry_endpoint" {
+  description = "The endpoint of the AI Foundry account"
+  value       = module.minato.ai_foundry_endpoint
+}
+
+output "ai_foundry_deployment_name" {
+  description = "The deployment name to use as the model/engine identifier when calling the API"
+  value       = module.minato.ai_foundry_deployment_name
+}

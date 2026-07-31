@@ -26,6 +26,11 @@ document_intelligence = {
   sku_name = "F0"
 }
 
+ai_foundry = {
+  model_name    = "gpt-5.4-nano"
+  model_version = "2026-03-17"
+}
+
 default_admin_email = "alandavidhenry@outlook.com"
 
 extra_app_settings = {

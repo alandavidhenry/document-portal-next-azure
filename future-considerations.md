@@ -612,6 +612,20 @@ Defer until there is a clear use case. The programmatic PDF generation approach 
 
 ---
 
+## SLM-Generated Comprehension Questions — Infra Provisioned Ahead of Need
+
+**Status (2026-07-31):** Terraform-only, no application code yet. `infrastructure/modules/ai_foundry/` provisions an Azure AI Foundry (Cognitive Services, `kind = "AIServices"`) account plus a single `GlobalStandard` (pay-per-token, no reserved capacity) model deployment, wired into `modules/minato/main.tf` the same way `gotenberg` is — so `terraform apply` creates it in both dev and prod even though nothing calls it yet.
+
+- **Model choice:** deliberately the cheapest available tier (a "nano"-class GPT model) rather than a dedicated small-language-model family (e.g. Phi) — at this feature's volume (generation only fires on template publish, not per request), the cost difference between an SLM and a cheap LLM is negligible, so reliability of structured JSON output wins. GlobalStandard was chosen over pinned regional/DataZone SKUs because it has no reserved-capacity cost and highest quota availability for low, bursty usage.
+- **Model name/version are placeholders** in both `terraform.tfvars` files (`ai_foundry.model_name` / `ai_foundry.model_version`) — confirm the exact catalog id against `ai.azure.com/catalog/models` before ever running `terraform apply` against this module, since the model that prompted this (a GPT tier released after 2026-01) can't be verified against training data.
+- **`version_upgrade_option = "NoAutoUpgrade"`** (default in the module) — Azure AI Foundry deployments can auto-upgrade to a new default model version when the deployed one retires; pinned here deliberately so a retirement doesn't silently change output quality/cost without a human noticing. Check each model's retirement date on its catalog card periodically.
+- **Why provisioned now instead of scaffolded like `postgres_flexible_server`:** explicit choice — normally build-ahead-of-need infra here stays unwired until there's consuming app code (see `postgres_flexible_server`), but this was provisioned immediately per instruction. Cost exposure is minimal regardless (GlobalStandard bills per token, not per idle hour), but it means Azure resources exist in both dev and prod with nothing calling them yet.
+- **Still not built:** the actual generation flow — a route/lib function that sends document text to the deployment, gets back a structured `{question, options[], answer}[]`, and a human-review UI gate before it can be published as a template's `questions`. See item 1 under P19's "Deferred, no target date" above.
+
+Key files: `infrastructure/modules/ai_foundry/`, `infrastructure/modules/minato/main.tf`, `infrastructure/env/{Development,Production}/{main.tf,variables.tf,outputs.tf,terraform.tfvars}`
+
+---
+
 ## Multi-tenancy
 
 ### Current state

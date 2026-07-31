@@ -11,6 +11,7 @@ module "minato" {
   storage               = var.storage
   storage_container     = var.storage_container
   document_intelligence = var.document_intelligence
+  ai_foundry            = var.ai_foundry
   github_username       = var.github_username
   github_token          = var.github_token
   default_admin_email   = var.default_admin_email
