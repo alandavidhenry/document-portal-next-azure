@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { generateSasToken, uploadBlob } from '../storage'
+import { downloadBlob, generateSasToken, uploadBlob } from '../storage'
 
 const { mockBlobClient, mockBlockBlobClient, mockContainerClient } = vi.hoisted(
   () => {
@@ -8,7 +8,8 @@ const { mockBlobClient, mockBlockBlobClient, mockContainerClient } = vi.hoisted(
       generateSasUrl: vi.fn()
     }
     const mockBlockBlobClient = {
-      uploadData: vi.fn()
+      uploadData: vi.fn(),
+      downloadToBuffer: vi.fn()
     }
     const mockContainerClient = {
       getBlobClient: vi.fn(() => mockBlobClient),
@@ -96,5 +97,22 @@ describe('uploadBlob', () => {
       Buffer.from('pdf bytes'),
       { blobHTTPHeaders: { blobContentType: 'application/pdf' } }
     )
+  })
+})
+
+describe('downloadBlob', () => {
+  it('downloads the blob and returns the buffer', async () => {
+    const buffer = Buffer.from('pdf bytes')
+    mockBlockBlobClient.downloadToBuffer.mockResolvedValue(buffer)
+
+    const result = await downloadBlob(
+      'my-container',
+      'templates/template_123/source.pdf'
+    )
+
+    expect(mockContainerClient.getBlockBlobClient).toHaveBeenCalledWith(
+      'templates/template_123/source.pdf'
+    )
+    expect(result).toBe(buffer)
   })
 })

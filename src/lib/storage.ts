@@ -27,6 +27,18 @@ export async function uploadBlob(
   })
 }
 
+export async function downloadBlob(
+  containerName: string,
+  blobName: string
+): Promise<Buffer> {
+  const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING!
+  const blobServiceClient =
+    BlobServiceClient.fromConnectionString(connectionString)
+  const containerClient = blobServiceClient.getContainerClient(containerName)
+  const blockBlobClient = containerClient.getBlockBlobClient(blobName)
+  return blockBlobClient.downloadToBuffer()
+}
+
 export async function deleteBlob(
   containerName: string,
   blobName: string

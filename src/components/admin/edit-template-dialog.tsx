@@ -15,7 +15,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy
 } from '@dnd-kit/sortable'
-import { Loader2, Plus, Trash2, Upload } from 'lucide-react'
+import { Loader2, Plus, Sparkles, Trash2, Upload } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import {
@@ -134,9 +134,15 @@ export function EditTemplateDialog({
   )
   const [newUpload, setNewUpload] = useState<UploadedDocument | null>(null)
   const [isUploadingFile, setIsUploadingFile] = useState(false)
+  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const isUploadTemplate = template?.sourceType === 'upload'
+  // AI question generation is admin-portal-only for now — the customer
+  // self-serve portal passes a different apiBasePath and doesn't get this
+  // route, so the button is hidden there rather than shown broken.
+  const canGenerateQuestions =
+    !apiBasePath || apiBasePath === '/api/admin/templates'
 
   useEffect(() => {
     if (template) {
@@ -311,6 +317,43 @@ export function EditTemplateDialog({
         return f
       })
     )
+  }
+
+  async function handleGenerateQuestions() {
+    if (!template?.id) return
+
+    setIsGeneratingQuestions(true)
+    try {
+      const response = await fetch(
+        `/api/admin/templates/${template.id}/generate-questions`,
+        { method: 'POST' }
+      )
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to generate questions')
+      }
+
+      const { questions: generated } = (await response.json()) as {
+        questions: ComprehensionQuestion[]
+      }
+      setQuestions((prev) => [...prev, ...generated])
+      toast({
+        title: 'Questions generated',
+        description: `Added ${generated.length} draft question${generated.length === 1 ? '' : 's'} — review and edit before saving.`
+      })
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to generate questions',
+        variant: 'destructive'
+      })
+    } finally {
+      setIsGeneratingQuestions(false)
+    }
   }
 
   function addQuestion() {
@@ -954,16 +997,34 @@ export function EditTemplateDialog({
                     Customers must answer these correctly before signing.
                   </p>
                 </div>
-                <Button
-                  type='button'
-                  variant='outline'
-                  size='sm'
-                  onClick={addQuestion}
-                  disabled={isLoading}
-                >
-                  <Plus className='mr-1 h-3 w-3' />
-                  Add Question
-                </Button>
+                <div className='flex items-center gap-2'>
+                  {canGenerateQuestions && (
+                    <Button
+                      type='button'
+                      variant='outline'
+                      size='sm'
+                      onClick={handleGenerateQuestions}
+                      disabled={isLoading || isGeneratingQuestions}
+                    >
+                      {isGeneratingQuestions ? (
+                        <Loader2 className='mr-1 h-3 w-3 animate-spin' />
+                      ) : (
+                        <Sparkles className='mr-1 h-3 w-3' />
+                      )}
+                      Generate with AI
+                    </Button>
+                  )}
+                  <Button
+                    type='button'
+                    variant='outline'
+                    size='sm'
+                    onClick={addQuestion}
+                    disabled={isLoading}
+                  >
+                    <Plus className='mr-1 h-3 w-3' />
+                    Add Question
+                  </Button>
+                </div>
               </div>
 
               {questions.length === 0 && (
